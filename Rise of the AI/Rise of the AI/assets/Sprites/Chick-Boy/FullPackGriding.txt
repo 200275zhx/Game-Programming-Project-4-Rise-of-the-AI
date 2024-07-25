@@ -1,0 +1,18 @@
+0-5			idle
+6-16			idle extra
+17-26			run
+27-38			jump	(27-33 jump up, 34-38 fall down)
+27-33,42-48,34-38	double jump
+52-57			wall grab
+58-61			wall slide
+62-65			floor slide
+66-72			dash
+4,73-75			take damage
+76-80			attack 1
+81-86			attack 2
+87-93			attack 3
+94-97			ducking
+97-100			crouch idle
+101-110			crouch walk
+0-1,111-116,116		death 1
+117-124,124		death 2
