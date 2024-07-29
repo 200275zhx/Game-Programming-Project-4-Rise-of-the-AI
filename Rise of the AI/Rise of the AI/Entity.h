@@ -9,24 +9,28 @@
 #include <cmath>
 #include "Map.h"
 
-enum EntityType { PLATFORM, PLAYER, ENEMY };
-enum AIType { WALKER, GUARD };
-enum AIState { AI_WALKING, AI_IDLE, AI_ATTACKING };
+//enum EntityType { PLATFORM, PLAYER, ENEMY };
+//enum AIType { WALKER, GUARD, JUMPER };
+//enum AIState { AI_WALKING, AI_IDLE, AI_ATTACKING, AI_JUMP_ATTACKING };
 
 class Entity
 {
 protected:
     bool m_is_active = true;
 
-    EntityType m_entity_type;
-    AIType     m_ai_type;
-    AIState    m_ai_state;
+    //EntityType m_entity_type;
+    //AIType     m_ai_type;
+    //AIState    m_ai_state;
+    //float      m_ai_walk_direction;
+    //bool       m_is_ai_jump_attack_begin;
+
     // ————— TRANSFORMATIONS ————— //
     glm::vec3 m_movement;
     glm::vec3 m_position;
     glm::vec3 m_scale;
     glm::vec3 m_velocity;
     glm::vec3 m_acceleration;
+    //glm::vec3 m_ai_velocity = glm::vec3(0.0f);
 
     glm::mat4 m_model_matrix;
 
@@ -42,7 +46,8 @@ protected:
     // ————— ANIMATION ————— //
     int m_animation_cols,
         m_animation_rows,
-        m_animation_index;
+        m_animation_index,
+        m_tex_width;
 
     bool is_current_animation_complete = true;
     std::vector<std::vector<int>> m_animation_sequences;
@@ -69,9 +74,21 @@ public:
     Entity();
     Entity(GLuint texture_id, float speed, glm::vec3 acceleration, float jump_power, 
         std::vector<std::vector<int>> animation_sequences, float animation_time,
-        int animation_index, int animation_cols, int animation_rows, float width, float height, EntityType EntityType);
-    Entity(GLuint texture_id, float speed, float width, float height, EntityType EntityType); // Simpler constructor
-    Entity(GLuint texture_id, float speed, float width, float height, EntityType EntityType, AIType AIType, AIState AIState); // AI constructor
+        int animation_index, int animation_cols, int animation_rows, float width, float height
+        //, EntityType EntityType
+    );
+    Entity(GLuint texture_id, float speed, glm::vec3 acceleration, float jump_power,
+        std::vector<std::vector<int>> animation_sequences, float animation_time,
+        int animation_index, int animation_cols, int animation_rows, float width, float height,
+        //EntityType EntityType, AIType AIType, AIState AIState, 
+        float tex_width_ratio); // AI constructor
+    //Entity(GLuint texture_id, float speed, float width, float height
+    //    //, EntityType EntityType
+    //); // Simpler constructor
+
+    Entity(GLuint texture_id, float speed, float width, float height
+        //, EntityType EntityType, AIType AIType, AIState AIState
+    ); // AI constructor
     ~Entity();
 
     void draw_sprite_from_texture_atlas(ShaderProgram* program, GLuint texture_id, int index);
@@ -84,9 +101,10 @@ public:
     virtual void update(float delta_time, Entity* player, Entity* collidable_entities, int collidable_entity_count, Map* map);
     void render(ShaderProgram* program);
 
-    void ai_activate(Entity* player);
-    void ai_walk();
-    void ai_guard(Entity* player);
+    //void ai_activate(Entity* player);
+    //void ai_walk();
+    //void ai_guard(Entity* player);
+    //void ai_jump(Entity* player);
 
     void normalise_movement() { m_movement = glm::normalize(m_movement); }
 
@@ -105,9 +123,9 @@ public:
     virtual void attack() { m_is_attacking = true; }
 
     // ————— GETTERS ————— //
-    EntityType const get_entity_type()    const { return m_entity_type; };
-    AIType     const get_ai_type()        const { return m_ai_type; };
-    AIState    const get_ai_state()       const { return m_ai_state; };
+    //EntityType const get_entity_type()    const { return m_entity_type; };
+    //AIType     const get_ai_type()        const { return m_ai_type; };
+    //AIState    const get_ai_state()       const { return m_ai_state; };
     glm::vec3 const get_position()     const { return m_position; }
     glm::vec3 const get_velocity()     const { return m_velocity; }
     glm::vec3 const get_acceleration() const { return m_acceleration; }
@@ -120,14 +138,15 @@ public:
     bool      const get_collided_right() const { return m_collided_right; }
     bool      const get_collided_left() const { return m_collided_left; }
     glm::mat4 const get_model_matrix() const { return m_model_matrix; }
+    bool            get_is_active() const { return m_is_active; }
     //virtual CharacterAction get_current_action() const { std::cout << "Entity::get_current_action()\n";  return IDLE; }
 
     void activate() { m_is_active = true; };
     void deactivate() { m_is_active = false; };
     // ————— SETTERS ————— //
-    void const set_entity_type(EntityType new_entity_type) { m_entity_type = new_entity_type; };
-    void const set_ai_type(AIType new_ai_type) { m_ai_type = new_ai_type; };
-    void const set_ai_state(AIState new_state) { m_ai_state = new_state; };
+    //void const set_entity_type(EntityType new_entity_type) { m_entity_type = new_entity_type; };
+    //void const set_ai_type(AIType new_ai_type) { m_ai_type = new_ai_type; };
+    //void const set_ai_state(AIState new_state) { m_ai_state = new_state; };
     void const set_position(glm::vec3 new_position) { m_position = new_position; }
     void const set_velocity(glm::vec3 new_velocity) { m_velocity = new_velocity; }
     void const set_acceleration(glm::vec3 new_acceleration) { m_acceleration = new_acceleration; }

@@ -10,57 +10,94 @@
 #include <SDL_opengl.h>
 #include "Entity.h"
 
-void Entity::ai_activate(Entity* player)
-{
-    switch (m_ai_type)
-    {
-    case WALKER:
-        ai_walk();
-        break;
+//void Entity::ai_activate(Entity* player)
+//{
+//    if (check_collision(player)) {
+//        deactivate();
+//        return;
+//    }
+//
+//    switch (m_ai_type)
+//    {
+//    case WALKER:
+//        ai_walk();
+//        break;
+//
+//    case GUARD:
+//        ai_guard(player);
+//        break;
+//
+//    case JUMPER:
+//        ai_jump(player);
+//        break;
+//
+//    default:
+//        break;
+//    }
+//}
+//
+//void Entity::ai_walk()
+//{
+//    m_movement = glm::vec3(m_ai_walk_direction, 0.0f, 0.0f);
+//}
+//
+//void Entity::ai_guard(Entity* player)
+//{
+//    switch (m_ai_state) {
+//    case AI_IDLE:
+//        if (glm::distance(m_position, player->get_position()) < 3.0f) m_ai_state = AI_WALKING;
+//        break;
+//
+//    case AI_WALKING:
+//        if (m_position.x > player->get_position().x) {
+//            m_movement = glm::vec3(-1.0f, 0.0f, 0.0f);
+//        }
+//        else {
+//            m_movement = glm::vec3(1.0f, 0.0f, 0.0f);
+//        }
+//        break;
+//
+//    case AI_ATTACKING:
+//        break;
+//
+//    default:
+//        break;
+//    }
+//}
+//
+//void Entity::ai_jump(Entity* player)
+//{
+//    switch (m_ai_state) {
+//    case AI_IDLE:
+//        if (glm::distance(m_position, player->get_position()) < 3.0f) {
+//            m_is_ai_jump_attack_begin = true;
+//            m_ai_state = AI_JUMP_ATTACKING;
+//        }
+//        break;
+//
+//    case AI_JUMP_ATTACKING:
+//        if (m_is_ai_jump_attack_begin) {
+//            m_position = player->get_position();
+//            m_position.y += 3.0f;
+//            m_is_ai_jump_attack_begin = false;
+//        }
+//        if (m_position.y > -3.9f) m_position.y -= 0.1f;
+//        else { m_ai_state = AI_IDLE; }
+//        break;
+//
+//    default:
+//        break;
+//    }
+//}
 
-    case GUARD:
-        ai_guard(player);
-        break;
-
-    default:
-        break;
-    }
-}
-
-void Entity::ai_walk()
-{
-    m_movement = glm::vec3(-1.0f, 0.0f, 0.0f);
-}
-
-void Entity::ai_guard(Entity* player)
-{
-    switch (m_ai_state) {
-    case AI_IDLE:
-        if (glm::distance(m_position, player->get_position()) < 3.0f) m_ai_state = AI_WALKING;
-        break;
-
-    case AI_WALKING:
-        if (m_position.x > player->get_position().x) {
-            m_movement = glm::vec3(-1.0f, 0.0f, 0.0f);
-        }
-        else {
-            m_movement = glm::vec3(1.0f, 0.0f, 0.0f);
-        }
-        break;
-
-    case AI_ATTACKING:
-        break;
-
-    default:
-        break;
-    }
-}
 // Default constructor
 Entity::Entity()
     : m_position(0.0f), m_movement(0.0f), m_scale(1.0f, 1.0f, 0.0f), m_model_matrix(1.0f),
     m_speed(0.0f), m_animation_cols(0), m_animation_index(0),
     m_animation_rows(0), m_animation_indices({}), m_animation_time(0.0f),
-    m_texture_id(0), m_velocity(0.0f), m_acceleration(0.0f), m_width(0.0f), m_height(0.0f), m_direction(0)
+    m_texture_id(0), m_velocity(0.0f), m_acceleration(0.0f), m_width(0.0f), m_height(0.0f), 
+    m_direction(0), m_tex_width(1.0f)
+    //, m_ai_walk_direction(-1.0f)
 {
     // Initialize m_walking with zeros or any default value
     //for (int i = 0; i < SECONDS_PER_FRAME; ++i)
@@ -71,35 +108,66 @@ Entity::Entity()
 // Parameterized constructor
 Entity::Entity(GLuint texture_id, float speed, glm::vec3 acceleration, float jump_power, 
     std::vector<std::vector<int>> animation_sequences, float animation_time,
-    int animation_index, int animation_cols, int animation_rows, float width, float height, EntityType EntityType)
+    int animation_index, int animation_cols, int animation_rows, float width, float height
+    //, EntityType EntityType
+    )
     : m_position(0.0f), m_movement(0.0f), m_scale(1.0f, 1.0f, 0.0f), m_model_matrix(1.0f),
     m_speed(speed), m_acceleration(acceleration), m_jumping_power(jump_power), 
     m_animation_sequences(animation_sequences), m_animation_cols(animation_cols),
     m_animation_index(animation_index), m_animation_rows(animation_rows), m_animation_indices({}),
     m_animation_time(animation_time), m_texture_id(texture_id), m_velocity(0.0f),
-    m_width(width), m_height(height), m_entity_type(EntityType), m_direction(0)
+    m_width(width), m_height(height)
+    //, m_entity_type(EntityType)
+    , m_direction(0), m_tex_width(1.0f)
+    //, m_ai_walk_direction(-1.0f)
 {
     m_animation_indices = m_animation_sequences[0];
     /*set_walking(walking);*/
 }
 
-// Simpler constructor for partial initialization
-Entity::Entity(GLuint texture_id, float speed, float width, float height, EntityType EntityType)
+Entity::Entity(GLuint texture_id, float speed, glm::vec3 acceleration, float jump_power,
+    std::vector<std::vector<int>> animation_sequences, float animation_time,
+    int animation_index, int animation_cols, int animation_rows, float width, float height,
+    //EntityType EntityType, AIType AIType, AIState AIState,
+    float tex_width_ratio)
+
     : m_position(0.0f), m_movement(0.0f), m_scale(1.0f, 1.0f, 0.0f), m_model_matrix(1.0f),
-    m_speed(speed), m_animation_cols(0), m_animation_index(0), m_animation_rows(0), m_animation_indices({}), m_animation_time(0.0f),
-    m_texture_id(texture_id), m_velocity(0.0f), m_acceleration(0.0f), m_width(width), m_height(height), m_entity_type(EntityType), m_direction(0)
+    m_speed(speed), m_acceleration(acceleration), m_jumping_power(jump_power),
+    m_animation_sequences(animation_sequences), m_animation_cols(animation_cols),
+    m_animation_index(animation_index), m_animation_rows(animation_rows), m_animation_indices({}),
+    m_animation_time(animation_time), m_texture_id(texture_id), m_velocity(0.0f),
+    m_width(width), m_height(height), 
+    //m_entity_type(EntityType), m_ai_type(AIType), m_ai_state(AIState), m_ai_walk_direction(-1.0f),
+    m_direction(0), m_tex_width(tex_width_ratio)
 {
-    // Initialize m_walking with zeros or any default value
-    /*for (int i = 0; i < SECONDS_PER_FRAME; ++i)
-        for (int j = 0; j < SECONDS_PER_FRAME; ++j) m_walking[i][j] = 0;*/
-    m_animation_sequences = { {} };
+    m_animation_indices = m_animation_sequences[0];
 }
-Entity::Entity(GLuint texture_id, float speed, float width, float height, EntityType EntityType, AIType AIType, AIState AIState) 
+
+// Simpler constructor for partial initialization
+//Entity::Entity(GLuint texture_id, float speed, float width, float height
+//    //, EntityType EntityType
+//    )
+//    : m_position(0.0f), m_movement(0.0f), m_scale(1.0f, 1.0f, 0.0f), m_model_matrix(1.0f),
+//    m_speed(speed), m_animation_cols(0), m_animation_index(0), m_animation_rows(0), 
+//    m_animation_indices({}), m_animation_time(0.0f), m_texture_id(texture_id), m_velocity(0.0f), 
+//    m_acceleration(0.0f), m_width(width), m_height(height), 
+//    //m_entity_type(EntityType), m_ai_walk_direction(-1.0f),
+//    m_direction(0), m_tex_width(1.0f)
+//{
+//    // Initialize m_walking with zeros or any default value
+//    /*for (int i = 0; i < SECONDS_PER_FRAME; ++i)
+//        for (int j = 0; j < SECONDS_PER_FRAME; ++j) m_walking[i][j] = 0;*/
+//    m_animation_sequences = { {} };
+//}
+Entity::Entity(GLuint texture_id, float speed, float width, float height
+    //, EntityType EntityType, AIType AIType, AIState AIState
+    ) 
     : m_position(0.0f), m_movement(0.0f), m_scale(1.0f, 1.0f, 0.0f), m_model_matrix(1.0f),
     m_speed(speed), m_animation_cols(0), m_animation_index(0),
     m_animation_rows(0), m_animation_indices({}), m_animation_time(0.0f),
     m_texture_id(texture_id), m_velocity(0.0f), m_acceleration(0.0f), m_width(width), m_height(height), 
-    m_entity_type(EntityType), m_ai_type(AIType), m_ai_state(AIState), m_direction(0)
+    //m_entity_type(EntityType), m_ai_type(AIType), m_ai_state(AIState), m_ai_walk_direction(-1.0f),
+    m_direction(0), m_tex_width(1.0f)
 {
     // Initialize m_walking with zeros or any default value
     /*for (int i = 0; i < SECONDS_PER_FRAME; ++i)
@@ -116,7 +184,7 @@ void Entity::draw_sprite_from_texture_atlas(ShaderProgram* program, GLuint textu
     float v_coord = (float)(index / m_animation_cols) / (float)m_animation_rows;
 
     // Step 2: Calculate its UV size
-    float width = 1.0f / m_animation_cols;
+    float width = 1.0f / m_animation_cols / m_tex_width;
     float height = 1.0f / (float)m_animation_rows;
 
     // Step 3: Just as we have done before, match the texture coordinates to the vertices
@@ -299,28 +367,25 @@ void const Entity::check_collision_x(Map* map)
 void Entity::update(float delta_time, Entity* player, Entity* collidable_entities, int collidable_entity_count, Map* map)
 {
     if (!m_is_active) return;
+    //if (m_entity_type == ENEMY) ai_activate(player);
 
     m_collided_top = false;
     m_collided_bottom = false;
     m_collided_left = false;
     m_collided_right = false;
 
-    if (m_entity_type == ENEMY) ai_activate(player);
-
     // --------- UPDATE PHYSICS ---------- //
 
     m_velocity.x = m_movement.x * m_speed;
+    //std::cout << "Before velocity update: " << m_velocity.y << std::endl;
     m_velocity += m_acceleration * delta_time;
+    //std::cout << "After velocity update: " << m_velocity.y << std::endl;
 
-    m_position.y += m_velocity.y * delta_time;
-    check_collision_y(collidable_entities, collidable_entity_count);
-    check_collision_y(map);
-
-    m_position.x += m_velocity.x * delta_time;
-    check_collision_x(collidable_entities, collidable_entity_count);
-    check_collision_x(map);
-
-    if (m_collided_bottom && m_entity_type == ENEMY) std::cout << "enemy collide bottom\n";
+    //if (m_entity_type == ENEMY) std::cout << "enemy acc.y: " << m_acceleration.y << std::endl;
+    //if (m_entity_type == ENEMY) std::cout << "enemy vel.y: " << m_velocity.y << std::endl;
+    //if (m_entity_type == ENEMY) std::cout << "enemy delta_time: " << delta_time << std::endl;
+    //if (m_entity_type == ENEMY) std::cout << "enemy pos.y: " << m_velocity.y * delta_time << std::endl;
+    //if (m_entity_type == ENEMY) std::cout << "enemy m_pos.y: " << m_position.y << std::endl;
 
     if (m_is_jumping)
     {
@@ -328,9 +393,24 @@ void Entity::update(float delta_time, Entity* player, Entity* collidable_entitie
         m_velocity.y += m_jumping_power;
     }
 
+    //m_position.y += m_velocity.y * delta_time;
+    //check_collision_y(collidable_entities, collidable_entity_count);
+    check_collision_y(map);
+
+    m_position.x += m_velocity.x * delta_time;
+    //check_collision_x(collidable_entities, collidable_entity_count);
+    check_collision_x(map);
+
+    //if (m_collided_bottom && m_entity_type == ENEMY) std::cout << "enemy collide bottom\n";
+
     m_model_matrix = glm::mat4(1.0f);
     m_model_matrix = glm::scale(m_model_matrix, m_scale);
     m_model_matrix = glm::translate(m_model_matrix, m_position);
+
+    // --------- UPDATE AI_WALKER ---------- //
+
+    //if (m_collided_left) m_ai_walk_direction = 1.0f;
+    //if (m_collided_right) m_ai_walk_direction = -1.0f;
 
     // --------- UPDATE ANIMATION ---------- //
 
@@ -361,6 +441,7 @@ void Entity::play_once(float delta_time) {
 
 void Entity::render(ShaderProgram* program)
 {
+    if (!m_is_active) return;
     program->set_model_matrix(m_model_matrix);
 
     if (!m_animation_indices.empty())

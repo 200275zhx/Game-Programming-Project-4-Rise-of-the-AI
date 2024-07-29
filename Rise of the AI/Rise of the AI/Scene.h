@@ -16,6 +16,7 @@
 #include "Entity.h"
 #include "Map.h"
 #include "Character.h"
+#include "Enemy.h"
 
 /**
     Notice that the game's state is now part of the Scene class, not the main file.
@@ -23,9 +24,9 @@
 struct GameState
 {
     // ————— GAME OBJECTS ————— //
-    Map *map;
-    Entity *player;
-    Entity *enemies;
+    Map* map;
+    Entity* player;
+    Enemy* enemies;
     
     // ————— AUDIO ————— //
     Mix_Music *bgm;
@@ -41,7 +42,7 @@ protected:
     
 public:
     // ————— ATTRIBUTES ————— //
-    int m_number_of_enemies = 1;
+    int m_number_of_enemies = 0;
     
     // ————— METHODS ————— //
     virtual void initialise() = 0;

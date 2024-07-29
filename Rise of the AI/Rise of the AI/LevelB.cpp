@@ -32,6 +32,7 @@ LevelB::~LevelB()
 void LevelB::initialise()
 {
     m_game_state.next_scene_id = -1;
+    m_number_of_enemies = ENEMY_COUNT;
     
     GLuint map_texture_id = Utility::load_texture("assets/tileset.png");
     m_game_state.map = new Map(LEVEL_WIDTH, LEVEL_HEIGHT, LEVELB_DATA, map_texture_id, 1.0f, 4, 1);
@@ -96,11 +97,11 @@ void LevelB::initialise()
     Enemies' stuff */
     GLuint enemy_texture_id = Utility::load_texture(ENEMY_FILEPATH);
 
-    m_game_state.enemies = new Entity[ENEMY_COUNT];
+    m_game_state.enemies = new Enemy[ENEMY_COUNT];
 
     for (int i = 0; i < ENEMY_COUNT; i++)
     {
-    m_game_state.enemies[i] =  Entity(enemy_texture_id, 1.0f, 1.0f, 1.0f, ENEMY, GUARD, AI_IDLE);
+    //m_game_state.enemies[i] = Enemy(enemy_texture_id, 1.0f, 1.0f, 1.0f);
     }
 
 

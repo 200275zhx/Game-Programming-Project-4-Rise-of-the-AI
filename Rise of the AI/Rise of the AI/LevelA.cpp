@@ -5,20 +5,23 @@
 #define LEVEL_HEIGHT 8
 
 constexpr char SPRITESHEET_FILEPATH[] = "assets/george_0.png",
-            ENEMY_FILEPATH[]       = "assets/soph.png",
-            CHICKBOY_FILEPATH[] = "assets/Sprites/Chick-Boy/ChikBoyFullPack_10x14.png"; // 10 * 14 spritesheet
+            HELLBOT_FILEPATH[]       = "assets/Sprites/Enemy/Hell Bot DARK/idle 92x36.png",
+            BLINDING_SPIDER_FILEPATH[] = "assets/Sprites/Enemy/Blinding Spider/static idle.png",
+            FLOWER_ENEMY_FILEPATH[] = "assets/Sprites/Enemy/Flower Enemy/death 32x32.png",
+            CHICKBOY_FILEPATH[] = "assets/Sprites/Chick-Boy/ChikBoyFullPack_10x14.png", // 10 * 14 spritesheet
+            TILESET_FILEPATH[] = "assets/Tileset/DARK Edition Tileset No background.png"; // 14 * 16 tileset
 
 
 unsigned int LEVELA_DATA[] =
 {
-    3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
-    3, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2,
-    3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
+    143, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    143, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    143, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    143, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    143, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    143, 0, 0, 0, 0, 0, 0, 0, 0, 128, 128, 128, 128, 128,
+    142, 128, 128, 128, 128, 128, 128, 128, 128, 142, 142, 142, 142, 142,
+    142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142
 };
 
 LevelA::~LevelA()
@@ -33,9 +36,10 @@ LevelA::~LevelA()
 void LevelA::initialise()
 {
     m_game_state.next_scene_id = -1;
+    m_number_of_enemies = ENEMY_COUNT;
     
-    GLuint map_texture_id = Utility::load_texture("assets/tileset.png");
-    m_game_state.map = new Map(LEVEL_WIDTH, LEVEL_HEIGHT, LEVELA_DATA, map_texture_id, 1.0f, 4, 1);
+    GLuint map_texture_id = Utility::load_texture(TILESET_FILEPATH);
+    m_game_state.map = new Map(LEVEL_WIDTH, LEVEL_HEIGHT, LEVELA_DATA, map_texture_id, 1.0f, 14, 16);
     
     // Code from main.cpp's initialise()
     //ChickBoy//
@@ -95,20 +99,85 @@ void LevelA::initialise()
     
     /**
     Enemies' stuff */
-    GLuint enemy_texture_id = Utility::load_texture(ENEMY_FILEPATH);
+    m_game_state.enemies = new Enemy[ENEMY_COUNT];
 
-    m_game_state.enemies = new Entity[ENEMY_COUNT];
+    GLuint hell_bot_texture_id = Utility::load_texture(HELLBOT_FILEPATH);
+    std::vector<std::vector<int>> hell_bot_animation = {
+        {0, 1, 2, 3, 4, 5}
+    };
 
-    for (int i = 0; i < ENEMY_COUNT; i++)
-    {
-    m_game_state.enemies[i] =  Entity(enemy_texture_id, 1.0f, 1.0f, 1.0f, ENEMY, GUARD, AI_IDLE);
-    }
+    m_game_state.enemies[0] = Enemy(
+        hell_bot_texture_id,         // texture id
+        2.0f,                      // speed
+        gravity,                   // acceleration
+        9.0f,                      // jumping power
+        hell_bot_animation,        // animation index sets
+        0.0f,                      // animation time
+        0,                         // current animation index
+        1,                        // animation column amount
+        6,                        // animation row amount
+        1.0f,                      // width
+        1.0f,                      // height
+        GUARD,
+        AI_IDLE,
+        2                          // texture size ratio width / height
+    );
+
+    GLuint blinding_spider_texture_id = Utility::load_texture(BLINDING_SPIDER_FILEPATH);
+    std::vector<std::vector<int>> blinding_spider_animation = {
+        {0}
+    };
+
+    m_game_state.enemies[1] = Enemy(
+        blinding_spider_texture_id,         // texture id
+        3.0f,                      // speed
+        gravity,                   // acceleration
+        9.0f,                      // jumping power
+        blinding_spider_animation,        // animation index sets
+        0.0f,                      // animation time
+        0,                         // current animation index
+        1,                        // animation column amount
+        1,                        // animation row amount
+        1.0f,                      // width
+        1.0f,                      // height
+        WALKER,
+        AI_IDLE,
+        1.0f                          // texture size ratio width / height
+    );
+
+    GLuint flower_enemy_texture_id = Utility::load_texture(FLOWER_ENEMY_FILEPATH);
+    std::vector<std::vector<int>> flower_enemy_animation = {
+        {3, 2, 1, 0, 1, 2}
+    };
+
+    m_game_state.enemies[2] = Enemy(
+        flower_enemy_texture_id,         // texture id
+        3.0f,                      // speed
+        gravity,                   // acceleration
+        9.0f,                      // jumping power
+        flower_enemy_animation,        // animation index sets
+        0.0f,                      // animation time
+        0,                         // current animation index
+        1,                        // animation column amount
+        4,                        // animation row amount
+        1.0f,                      // width
+        1.0f,                      // height
+        JUMPER,
+        AI_IDLE,
+        1.0f                          // texture size ratio width / height
+    );
+    //for (int i = 0; i < ENEMY_COUNT; i++)
+    //{
+    //m_game_state.enemies[i] =  Entity(enemy_texture_id, 1.0f, 1.0f, 1.0f, ENEMY, GUARD, AI_IDLE);
+    //}
 
 
-    m_game_state.enemies[0].set_position(glm::vec3(8.0f, 0.0f, 0.0f));
-    m_game_state.enemies[0].set_movement(glm::vec3(0.0f));
-    m_game_state.enemies[0].set_acceleration(glm::vec3(0.0f, -9.81f, 0.0f));
-    
+    m_game_state.enemies[0].set_position(glm::vec3(8.0f, -5.0f, 0.0f));
+    m_game_state.enemies[0].set_acceleration(glm::vec3(0.0f, 0.0f, 0.0f));
+    m_game_state.enemies[1].set_position(glm::vec3(3.0f, -5.0f, 0.0f));
+    m_game_state.enemies[1].set_acceleration(glm::vec3(0.0f, 0.0f, 0.0f));
+    m_game_state.enemies[2].set_position(glm::vec3(12.0f, -4.0f, 0.0f));
+    m_game_state.enemies[2].set_acceleration(glm::vec3(0.0f, 0.0f, 0.0f));
     
     /**
      BGM and SFX
@@ -126,24 +195,28 @@ void LevelA::update(float delta_time)
 {
     m_game_state.player->update(delta_time, m_game_state.player, m_game_state.enemies, ENEMY_COUNT, m_game_state.map);
 
-    /*for (int i = 0; i < ENEMY_COUNT; i++) {
+    for (int i = 0; i < ENEMY_COUNT; i++) {
         m_game_state.enemies[i].update(delta_time,
             m_game_state.player,
             NULL,
             0,
             m_game_state.map);
-        std::cout << m_game_state.enemies[i].get_position() << std::endl;
-        std::cout << m_game_state.enemies[i].get_scale() << std::endl;
-    }*/
+        //m_game_state.enemies[0].set_position(glm::vec3(8.0f, 0.0f, 0.0f));
+        //std::cout << m_game_state.enemies[i].get_position() << std::endl;
+    }
+    //std::cout << "collidable entity position x: " << m_game_state.enemies[1].get_position().x << std::endl;
+    static_cast<Character*>(m_game_state.player)->on_hit(m_game_state.enemies, ENEMY_COUNT, 10.0f, delta_time, 0.1f, 0.5f);
 
     if (m_game_state.player->get_position().y < -10.0f) m_game_state.next_scene_id = 1; // need change
-    std::cout << "player position: (" << m_game_state.player->get_position().x << ", " << m_game_state.player->get_position().y << ")\n";
+    //std::cout << "player position: (" << m_game_state.player->get_position().x << ", " << m_game_state.player->get_position().y << ")\n";
 }
 
 void LevelA::render(ShaderProgram *program)
 {
     m_game_state.map->render(program);
     m_game_state.player->render(program);
-    for (int i = 0; i < ENEMY_COUNT; i++)
+    for (int i = 0; i < ENEMY_COUNT; i++) {
+        //std::cout << m_game_state.enemies[i].get_scale() << std::endl;
         m_game_state.enemies[i].render(program);
+    }
 }

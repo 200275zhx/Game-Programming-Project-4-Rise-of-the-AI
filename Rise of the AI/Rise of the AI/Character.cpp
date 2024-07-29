@@ -3,16 +3,74 @@
 
 Character::Character(GLuint texture_id, float speed, glm::vec3 acceleration, float jump_power,
     std::vector<std::vector<int>> animation_sequences, float animation_time,
-    int animation_index, int animation_cols, int animation_rows, float width, float height) 
+    int animation_index, int animation_cols, int animation_rows, float width, float height)
 
-    : Entity(texture_id, speed, acceleration, jump_power, animation_sequences, animation_time, 
-        animation_index, animation_cols, animation_rows, width, height, PLAYER), character_movement_state(INAIR),
-    current_action(IDLE)
+    : Entity(texture_id, speed, acceleration, jump_power, animation_sequences, animation_time,
+        animation_index, animation_cols, animation_rows, width, height
+        //, PLAYER
+    ), character_movement_state(INAIR), current_action(IDLE), hit_back_animation_timer(0.0f),
+    is_on_hit(false), is_movable(true), life(3), is_dashable(true), in_air_dash_count(1), 
+    is_take_damage(false)
 {
+}
+
+void Character::on_hit(Entity* collidable_entities, int collidable_entity_count, 
+    float hit_back_power, float delta_time, float hit_back_duration, float invulnerable_duration) {
+
+    Entity* collidable_entity = nullptr;
+
+    for (int i = 0; i < collidable_entity_count; i++)
+    {
+        if (collidable_entities[i].get_is_active()) {
+            collidable_entity = &collidable_entities[i];
+            //std::cout << "current enemy position: " << collidable_entity->get_position().x << std::endl;
+            //std::cout << check_collision(collidable_entity) << std::endl;
+            //std::cout << "is on hit: " << is_on_hit << std::endl;
+            //std::cout << "i: " << i << std::endl << std::endl;
+            //std::cout << "collidable entity position x: " << collidable_entities[i].get_position().x << std::endl; // why can't get position of 1 and 2???
+            if (check_collision(collidable_entity) && !is_on_hit) {
+                glm::vec3 hit_back_dir = glm::normalize(glm::vec3(m_position - collidable_entity->get_position()));
+                hit_back = hit_back_dir * hit_back_power;
+                is_on_hit = true;
+                is_take_damage = true;
+                is_movable = false;
+                break;
+            }
+            //else {
+            //    std::cout << "i" << i << std::endl;
+            //    std::cout << "position x: " << m_position.x << "\nposition y: " << m_position.y << std::endl;
+            //    std::cout << "enemy position x: " << collidable_entity->get_position().x << "\nenemy position y: " << collidable_entity->get_position().y << std::endl;
+            //}
+        }
+    }
+
+    if (is_on_hit && collidable_entities) {
+        //std::cout << "hit_back_animation_timer: " << hit_back_animation_timer << std::endl;
+        //std::cout << "hit_back: " << hit_back.x << std::endl;
+        hit_back_animation_timer += delta_time;
+        if (hit_back_animation_timer < hit_back_duration) {
+            m_position += hit_back * delta_time / (1 + hit_back_duration - hit_back_animation_timer);
+        }
+        if (hit_back_animation_timer > hit_back_duration) {
+            is_movable = true;
+        }
+        if (hit_back_animation_timer > hit_back_duration + invulnerable_duration) {
+            is_on_hit = false;
+            hit_back_animation_timer = 0;
+        }
+    }
+
+    if (is_take_damage) {
+        --life;
+        m_animation_index = 0;
+        current_action = TAKE_DAMAGE;
+        is_take_damage = false;
+    }
 }
 
 void Character::update(float delta_time, Entity* player, Entity* collidable_entities, int collidable_entity_count, Map* map)
 {
+    if (life == 0) deactivate();
     if (!m_is_active) return;
 
     m_collided_top = false;
@@ -28,22 +86,19 @@ void Character::update(float delta_time, Entity* player, Entity* collidable_enti
     m_velocity += m_acceleration * delta_time;
 
     m_position.y += m_velocity.y * delta_time;
-    check_collision_y(collidable_entities, collidable_entity_count);
+    //check_collision_y(collidable_entities, collidable_entity_count);
     check_collision_y(map);
 
     m_position.x += m_velocity.x * delta_time;
-    check_collision_x(collidable_entities, collidable_entity_count);
+    //check_collision_x(collidable_entities, collidable_entity_count);
     check_collision_x(map);
+    
 
     if (m_is_jumping)
     {
         m_is_jumping = false;
         m_velocity.y += m_jumping_power;
     }
-
-    m_model_matrix = glm::mat4(1.0f);
-    m_model_matrix = glm::scale(m_model_matrix, m_scale);
-    m_model_matrix = glm::translate(m_model_matrix, m_position);
 
     // --------- UPDATE MOVEMENT STATE ---------- //
 
@@ -55,13 +110,13 @@ void Character::update(float delta_time, Entity* player, Entity* collidable_enti
 
     CharacterAction prev_action = current_action;
 
-    if (current_action != JUMP_START)
+    if (current_action != JUMP_START && current_action != DASH && current_action != TAKE_DAMAGE)
     switch (character_movement_state)
     {
     case GROUNDED:
         if (prev_state == INAIR) {
             if (prev_action == ATTACK_3) m_is_attacking = false;
-            else if (prev_action == IDLE) current_action = LANDING;
+            else if (prev_action == FALLING) current_action = LANDING;
         }
         else if (is_current_animation_complete) {
             if (m_velocity.x) current_action = RUNING;
@@ -99,9 +154,6 @@ void Character::update(float delta_time, Entity* player, Entity* collidable_enti
     }
 
     // --------- UPDATE ANIMATION ---------- //
-    if (m_velocity.x < 0) { m_direction = -1; }
-    if (m_velocity.x > 0) { m_direction = 1; }
-    if (m_direction < 0) m_model_matrix = glm::rotate(m_model_matrix, (float)3.1415926f, glm::vec3(0.0f, -1.0f, 0.0f));
 
     switch (current_action)
     {
@@ -140,6 +192,7 @@ void Character::update(float delta_time, Entity* player, Entity* collidable_enti
         loop_play(delta_time);
         break;
     case LANDING:
+        is_dashable = true;
         m_animation_indices = m_animation_sequences[LANDING];
         play_once(delta_time);
         break;
@@ -158,8 +211,30 @@ void Character::update(float delta_time, Entity* player, Entity* collidable_enti
     case FLOOR_SLIDE:
         break;
     case DASH:
+        is_dashable = false;
+        if (character_movement_state == INAIR) {
+            m_movement.x = 0.0f;
+            m_position.y -= m_velocity.y * delta_time;
+            m_velocity.y = 0.0f;
+        }
+        m_animation_indices = m_animation_sequences[DASH];
+        m_position += glm::vec3(m_direction, 0.0f, 0.0f) * delta_time * 10.0f;
+        play_once(delta_time * 2);
+        if (is_current_animation_complete) {
+            if (character_movement_state == INAIR) is_dashable = false;
+            else if (character_movement_state == GROUNDED) is_dashable = true;
+            current_action = IDLE;
+        }
         break;
     case TAKE_DAMAGE:
+        std::cout << "taking damage\n";
+        is_movable = false;
+        m_animation_indices = m_animation_sequences[TAKE_DAMAGE];
+        play_once(delta_time);
+        if (is_current_animation_complete) {
+            is_movable = true;
+            current_action = IDLE;
+        }
         break;
     case ATTACK_1:
         m_animation_indices = m_animation_sequences[ATTACK_1];
@@ -186,4 +261,12 @@ void Character::update(float delta_time, Entity* player, Entity* collidable_enti
         break;
     }
 
+    // --------- UPDATE TRANSFORMATION ---------- //
+
+    m_model_matrix = glm::mat4(1.0f);
+    m_model_matrix = glm::translate(m_model_matrix, m_position);
+    if (m_velocity.x < 0) { m_direction = -1; }
+    if (m_velocity.x > 0) { m_direction = 1; }
+    if (m_direction < 0) m_model_matrix = glm::rotate(m_model_matrix, (float)3.1415926f, glm::vec3(0.0f, -1.0f, 0.0f));
+    m_model_matrix = glm::scale(m_model_matrix, m_scale);
 }

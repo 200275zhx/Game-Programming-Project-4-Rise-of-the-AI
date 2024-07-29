@@ -44,6 +44,12 @@ public:
 
 	void set_current_action(CharacterAction action) { current_action = action; }
 	CharacterAction get_current_action() const { return current_action; }
+	void on_hit(Entity* collidable_entities, int collidable_entity_count,
+		float hit_back_power, float delta_time, float hit_back_duration, float invulnerable_duration);
+	bool movable() { return is_movable; }
+	int get_life() { return life; }
+	void dash() { if (is_dashable) { current_action = DASH; } }
+	bool get_is_dashable() { return is_dashable; }
 
 	//void const jump_hold() { current_action = JUMP_START; }
 	void const jump() override { 
@@ -57,4 +63,13 @@ private:
 //	float attack_damage;
 	CharacterState character_movement_state;
 	CharacterAction current_action;
+	float hit_back_animation_timer;
+	bool is_on_hit;
+	bool is_movable;
+	bool is_dashable;
+	bool is_take_damage;
+	int in_air_dash_count;
+	int life;
+
+	glm::vec3 hit_back = glm::vec3(0.0f);
 };
