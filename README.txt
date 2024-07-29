@@ -10,8 +10,10 @@ Attack:
   J + A / D: Run Attack
   Space + J: Jump Attack
 
+//------------ CHARACTER STATE ---------------//
 Character Life: 3
 Enemy Life: 1
 Enemy Count: 3
 
-GOAL: Defeat All Enemies
+//------------ GOAL ---------------//
+Defeat All Enemies
